@@ -1,0 +1,16 @@
+# Flask for the web framework
+Flask
+gunicorn # Production WSGI server
+
+# LangChain and Gemini SDK
+langchain
+langchain-google-genai
+langchain-core
+
+# RAG components
+pypdf # For PyPDFLoader
+sentence-transformers # For HuggingFaceEmbeddings model
+faiss-cpu # For FAISS vector store
+
+# Environment setup
+python-dotenv # For local development
