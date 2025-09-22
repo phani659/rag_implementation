@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini RAG Application</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for a modern, mobile-friendly look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Light gray background */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="rag-container" class="w-full max-w-2xl bg-white shadow-xl rounded-xl p-6 md:p-8">
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">
+            Gemini RAG: Ask Your PDF
+        </h1>
+
+        <!-- Input Form -->
+        <form id="query-form" class="space-y-4">
+            <label for="query-input" class="block text-lg font-medium text-gray-700">
+                Enter your question about the document:
+            </label>
+            <textarea
+                id="query-input"
+                rows="3"
+                class="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                placeholder="E.g., What is Scaled Dot-Product Attention?"
+                required
+            ></textarea>
+            <button
+                type="submit"
+                id="submit-button"
+                class="w-full py-3 px-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-300 disabled:opacity-50"
+            >
+                Get Answer
+            </button>
+        </form>
+
+        <!-- Response Area -->
+        <div id="response-area" class="mt-8 border-t pt-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Response</h2>
+            <div id="loading-indicator" class="hidden text-center">
+                <p class="text-indigo-600 font-medium">Generating answer... This may take a moment.</p>
+                <!-- Simple Loading Spinner -->
+                <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] text-indigo-500 mt-3" role="status">
+                    <span class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
+                </div>
+            </div>
+            <div id="answer-output" class="bg-gray-50 p-4 rounded-lg border border-gray-200 min-h-[100px] whitespace-pre-wrap">
+                Your answer will appear here.
+            </div>
+            <p id="sources-output" class="text-sm text-gray-500 mt-2 italic"></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('query-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const queryInput = document.getElementById('query-input');
+            const submitButton = document.getElementById('submit-button');
+            const answerOutput = document.getElementById('answer-output');
+            const sourcesOutput = document.getElementById('sources-output');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const query = queryInput.value.trim();
+
+            if (!query) return;
+
+            // UI State: Disable input, show loading
+            submitButton.disabled = true;
+            loadingIndicator.classList.remove('hidden');
+            answerOutput.textContent = '...';
+            sourcesOutput.textContent = '';
+            
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    answerOutput.textContent = data.answer || "Could not find a relevant answer in the document.";
+                    if (data.sources && data.sources.length > 0) {
+                        sourcesOutput.textContent = `Sources: ${data.sources.join(', ')}`;
+                    } else {
+                        sourcesOutput.textContent = 'No specific sources cited.';
+                    }
+                } else {
+                    answerOutput.textContent = `Error: ${data.error || 'Server error occurred.'}`;
+                    sourcesOutput.textContent = '';
+                }
+
+            } catch (error) {
+                console.error('Fetch error:', error);
+                answerOutput.textContent = 'A network or system error prevented the request.';
+                sourcesOutput.textContent = '';
+            } finally {
+                // UI State: Enable input, hide loading
+                submitButton.disabled = false;
+                loadingIndicator.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
